@@ -5,7 +5,6 @@ import io.mosip.liveness.api.frame.PixelFormat;
 import io.mosip.liveness.api.quality.BoundingBox;
 import io.mosip.liveness.api.quality.FaceLandmarks;
 import io.mosip.liveness.api.quality.FaceQuality;
-import io.mosip.liveness.api.quality.Point2D;
 import io.mosip.liveness.api.quality.QualityFailureReason;
 import io.mosip.liveness.core.analyzer.FaceObservation;
 import org.junit.jupiter.api.DisplayName;

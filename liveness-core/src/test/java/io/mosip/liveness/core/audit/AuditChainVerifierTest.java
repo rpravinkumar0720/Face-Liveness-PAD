@@ -2,7 +2,6 @@ package io.mosip.liveness.core.audit;
 
 import io.mosip.liveness.api.audit.AuditEventType;
 import io.mosip.liveness.api.audit.LivenessAuditEvent;
-import io.mosip.liveness.api.challenge.ChallengeType;
 import io.mosip.liveness.api.decision.DecisionType;
 import io.mosip.liveness.api.policy.WorkflowType;
 import org.junit.jupiter.api.DisplayName;

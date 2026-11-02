@@ -127,7 +127,7 @@ public class Evaluator {
         if (timelineJson.exists()) {
             try {
                 JsonNode tlNode = mapper.readTree(timelineJson);
-                challengeType = tlNode.path("challengeType").asText("NONE");
+                challengeType = tlNode.hasNonNull("challengeType") ? tlNode.path("challengeType").asText() : "NONE";
             } catch (Exception ignored) {}
         }
         boolean runActive = activeEnabled || (!"NONE".equalsIgnoreCase(challengeType) && !challengeType.isEmpty());

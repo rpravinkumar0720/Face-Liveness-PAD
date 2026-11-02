@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOSIP Face Liveness & PAD Verification</title>
-  <meta name="description" content="Reference implementation of MOSIP biometric face liveness and presentation attack detection (PAD) system">
+  <title>MOSIP Biometric Face Liveness &amp; PAD Verification System</title>
+  <meta name="description" content="Open-source ISO/IEC 19794-5 and ISO 30107 biometric face liveness and Presentation Attack Detection (PAD) reference engine with zero-footprint memory wiping.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#0a0e17">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,14 +19,22 @@
     <!-- Header -->
     <header class="app-header">
       <div class="brand">
-        <div class="brand-badge">MOSIP</div>
+        <a href="/" class="brand-link" aria-label="MOSIP Face Liveness Home">
+          <div class="brand-badge">MOSIP</div>
+        </a>
         <div class="brand-title">
-          <h1 id="appTitle">Face Liveness & PAD</h1>
-          <span class="sub-title">ISO/IEC 19794-5 & ISO 30107 Reference Engine</span>
+          <h1 id="appTitle">Face Liveness &amp; PAD</h1>
+          <span class="sub-title">ISO/IEC 19794-5 &amp; ISO 30107 Reference Engine</span>
         </div>
       </div>
 
-      <div class="header-controls">
+      <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="headerControls">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+
+      <div class="header-controls" id="headerControls">
         <div class="control-group">
           <label for="workflowSelect" id="lblWorkflow">Workflow:</label>
           <select id="workflowSelect" class="custom-select">
@@ -35,7 +47,7 @@
 
         <div class="control-group">
           <label for="langToggle" id="lblLang">Language:</label>
-          <button id="langToggle" class="lang-btn" aria-label="Toggle language">
+          <button id="langToggle" class="lang-btn" type="button" aria-label="Toggle language">
             <span class="lang-code active" data-lang="en">EN</span>
             <span class="lang-divider">/</span>
             <span class="lang-code" data-lang="ta">தமிழ்</span>
@@ -43,10 +55,10 @@
         </div>
 
         <div class="control-group">
-          <button id="btnVoice" class="btn btn-sm btn-secondary" title="Toggle Spoken Guidance">🔊 Voice: OFF</button>
-          <button id="btnContrast" class="btn btn-sm btn-secondary" title="High Contrast Mode">🌓 Contrast</button>
-          <button id="btnSplitView" class="btn btn-sm btn-secondary hidden" title="Toggle Side-by-Side Split View">🔲 Split View</button>
-          <button id="btnJudgeMode" class="btn btn-sm btn-secondary" title="Unlock Judge Mode (token-gated)">⚖️ Judge Mode</button>
+          <button id="btnVoice" type="button" class="btn btn-sm btn-secondary" title="Toggle Spoken Guidance">🔊 Voice: OFF</button>
+          <button id="btnContrast" type="button" class="btn btn-sm btn-secondary" title="High Contrast Mode">🌓 Contrast</button>
+          <button id="btnSplitView" type="button" class="btn btn-sm btn-secondary hidden" title="Toggle Side-by-Side Split View">🔲 Split View</button>
+          <button id="btnJudgeMode" type="button" class="btn btn-sm btn-secondary" title="Unlock Judge Mode (token-gated)">⚖️ Judge Mode</button>
         </div>
 
         <div class="status-indicator" id="serverStatusIndicator" title="Server Connection">
@@ -122,19 +134,19 @@
                   </div>
                 </div>
                 <div class="decision-actions">
-                  <button id="btnRetry" class="btn btn-primary">Start New Session</button>
-                  <button id="btnViewAuditFromModal" class="btn btn-secondary">Inspect Audit Trail</button>
+                  <button type="button" id="btnRetry" class="btn btn-primary">Start New Session</button>
+                  <button type="button" id="btnViewAuditFromModal" class="btn btn-secondary">Inspect Audit Trail</button>
                 </div>
               </div>
             </div>
 
             <!-- Fallback / Error Overlay -->
-            <div class="camera-error-overlay hidden" id="cameraErrorOverlay">
+            <div class="camera-error-overlay hidden" id="cameraErrorOverlay" role="alert" aria-live="assertive">
               <div class="error-modal">
                 <div class="error-icon">⚠️</div>
                 <h3 id="cameraErrorTitle">Camera Access Required</h3>
                 <p id="cameraErrorMessage">Please allow camera permissions to begin face verification.</p>
-                <button id="btnRetryCamera" class="btn btn-primary">Try Again</button>
+                <button type="button" id="btnRetryCamera" class="btn btn-primary">Try Again</button>
               </div>
             </div>
           </div>
@@ -173,10 +185,10 @@
         </div>
 
         <div class="tab-header">
-          <button class="tab-btn active" data-tab="tabAudit" id="tabBtnAudit">Audit Chain</button>
-          <button class="tab-btn" data-tab="tabPolicy" id="tabBtnPolicy">Policy</button>
-          <button class="tab-btn hidden" data-tab="tabDiag" id="tabBtnDiag">Live Telemetry</button>
-          <button class="tab-btn hidden" data-tab="tabRedTeam" id="tabBtnRedTeam">Red Team Lab</button>
+          <button type="button" class="tab-btn active" data-tab="tabAudit" id="tabBtnAudit">Audit Chain</button>
+          <button type="button" class="tab-btn" data-tab="tabPolicy" id="tabBtnPolicy">Policy</button>
+          <button type="button" class="tab-btn hidden" data-tab="tabDiag" id="tabBtnDiag">Live Telemetry</button>
+          <button type="button" class="tab-btn hidden" data-tab="tabRedTeam" id="tabBtnRedTeam">Red Team Lab</button>
         </div>
 
         <!-- Tab 1: Cryptographic Audit Chain -->
@@ -187,12 +199,12 @@
               <p class="section-desc">SHA-256 forward-linked event trail</p>
             </div>
             <div class="audit-actions">
-              <button id="btnVerifyChain" class="btn btn-sm btn-verify" title="Verify cryptographic linkage">Verify Chain</button>
-              <button id="btnTamperChain" class="btn btn-sm btn-tamper" title="Simulate local adversary altering an offline audit record">Simulate Edit on Local Log Copy</button>
+              <button type="button" id="btnVerifyChain" class="btn btn-sm btn-verify" title="Verify cryptographic linkage">Verify Chain</button>
+              <button type="button" id="btnTamperChain" class="btn btn-sm btn-tamper" title="Simulate local adversary altering an offline audit record">Simulate Edit on Local Log Copy</button>
             </div>
           </div>
 
-          <div class="verification-badge hidden" id="chainVerificationBadge">
+          <div class="verification-badge hidden" id="chainVerificationBadge" role="status">
             <span class="badge-icon">✓</span>
             <span class="badge-text" id="chainVerificationText">Chain Valid</span>
           </div>
@@ -234,7 +246,7 @@
             </div>
           </div>
 
-          <div class="hard-veto-banner hidden" id="diagVetoBanner">
+          <div class="hard-veto-banner hidden" id="diagVetoBanner" role="alert">
             <span class="veto-icon">🛡️</span>
             <span class="veto-text" id="diagVetoText">HARD VETO TRIGGERED: Screen replay detected</span>
           </div>
@@ -312,7 +324,7 @@
                 <h4>🖨️ PAI-1: Printed Photo Attack</h4>
                 <p>2D matte/gloss paper face, 0D rigid translation, flat border gradients.</p>
               </div>
-              <button id="btnReplayPrint" class="btn btn-sm btn-replay">▶️ Test Print Attack</button>
+              <button type="button" id="btnReplayPrint" class="btn btn-sm btn-replay">▶️ Test Print Attack</button>
             </div>
 
             <!-- PAI-2 -->
@@ -321,7 +333,7 @@
                 <h4>📱 PAI-2a: Mobile Screen Replay</h4>
                 <p>High-frequency OLED/LCD subpixel grid, specular glare reflection.</p>
               </div>
-              <button id="btnReplayScreen" class="btn btn-sm btn-replay">▶️ Test Screen Replay</button>
+              <button type="button" id="btnReplayScreen" class="btn btn-sm btn-replay">▶️ Test Screen Replay</button>
             </div>
 
             <!-- PAI-3 -->
@@ -330,7 +342,7 @@
                 <h4>🎭 PAI-3: 3D Mask Presentation</h4>
                 <p>Silicone/latex mask with uniform pigment and perimeter boundary discontinuities.</p>
               </div>
-              <button id="btnReplayMask" class="btn btn-sm btn-replay">▶️ Test 3D Mask</button>
+              <button type="button" id="btnReplayMask" class="btn btn-sm btn-replay">▶️ Test 3D Mask</button>
             </div>
 
             <!-- Adversarial Landmark Injection -->
@@ -339,12 +351,12 @@
                 <h4>🪪 Adversarial: Forged Landmark Mismatch</h4>
                 <p>Browser landmarks forged with synthetic blinks injected on a static frame.</p>
               </div>
-              <button id="btnReplayForged" class="btn btn-sm btn-replay btn-danger-action">▶️ Test Forged Landmarks</button>
+              <button type="button" id="btnReplayForged" class="btn btn-sm btn-replay btn-danger-action">▶️ Test Forged Landmarks</button>
             </div>
           </div>
 
           <div class="redteam-actions">
-            <button id="btnResetLive" class="btn btn-secondary btn-sm">🔄 Return to Live Camera Stream</button>
+            <button type="button" id="btnResetLive" class="btn btn-secondary btn-sm">🔄 Return to Live Camera Stream</button>
           </div>
 
           <div class="redteam-terminal" id="redTeamTerminal">
@@ -357,14 +369,36 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <span>MOSIP Biometrics | Zero-biometric disk footprint | RAM frame wiping</span>
+      <span>&copy; <span id="copyrightYear"></span> MOSIP Open Source Project. All rights reserved. Zero-biometric disk footprint.</span>
       <div class="footer-links">
-        <a href="/api/health" target="_blank" class="footer-link">✓ API Health</a>
-        <a href="/api/policy/RESIDENT_AUTH" target="_blank" class="footer-link">📋 Resident Auth Policy</a>
-        <a href="/api/audit/verify" target="_blank" class="footer-link">🛡️ Audit Chain Verification</a>
-        <a href="collect.html" class="footer-link">Dataset Collector</a>
+        <a href="/api/health" target="_blank" rel="noopener noreferrer" class="footer-link">✓ API Health</a>
+        <a href="#tabPolicy" id="footerLinkPolicy" class="footer-link">📋 Policy Inspector</a>
+        <a href="#tabAudit" id="footerLinkAudit" class="footer-link">🛡️ Audit Verification</a>
+        <a href="/collect.html" class="footer-link">Dataset Collector</a>
+        <a href="mailto:support@mosip.io" class="footer-link">✉️ support@mosip.io</a>
+        <a href="tel:+918067890000" class="footer-link">📞 +91 (80) 6789-0000</a>
       </div>
     </footer>
+  </div>
+
+  <!-- Accessible Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Token Dialog Modal for Judge Mode -->
+  <div id="tokenModalOverlay" class="token-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="tokenModalTitle">
+    <div class="token-modal">
+      <h3 id="tokenModalTitle" class="token-modal-title">⚖️ Unlock Judge Mode</h3>
+      <p class="token-modal-desc">Enter the administrative bearer token to access live heuristic telemetry, red team attack replays, and protected policy settings.</p>
+      <div class="token-input-group">
+        <label for="adminTokenInput" style="font-size: 12px; color: var(--text-secondary);">Admin/Judge Token:</label>
+        <input type="password" id="adminTokenInput" class="token-input" placeholder="e.g. mosip-admin-token-2026" autocomplete="off" />
+        <span id="tokenInputError" class="token-input-error" role="alert">Please enter a valid token</span>
+      </div>
+      <div class="token-modal-actions">
+        <button type="button" id="btnCancelToken" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btnSubmitToken" class="btn btn-primary">Authenticate</button>
+      </div>
+    </div>
   </div>
 
   <!-- MediaPipe Tasks Vision Client -->

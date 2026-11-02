@@ -54,10 +54,12 @@ body {
   margin: 0 auto;
   width: 100%;
   padding: 16px 24px;
+  box-sizing: border-box;
 }
 
 /* Header */
 .app-header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -74,6 +76,24 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.brand-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.2s;
+}
+
+.brand-link:hover {
+  opacity: 0.9;
+}
+
+.brand-link:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 .brand-badge {
@@ -254,8 +274,10 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 250px;
-  height: 330px;
+  width: clamp(160px, 48vw, 250px);
+  height: clamp(210px, 64vw, 330px);
+  max-width: 82%;
+  max-height: 85%;
   border: 3px solid rgba(255, 255, 255, 0.4);
   border-radius: 50% / 50%;
   pointer-events: none;
@@ -1123,4 +1145,428 @@ body.high-contrast .sidebar-section {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* ==========================================================================
+   Mobile Menu Button & Drawer
+   ========================================================================== */
+.mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 44px;
+  height: 44px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 10px;
+  gap: 5px;
+  z-index: 105;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.mobile-menu-btn:hover {
+  border-color: var(--border-focus);
+}
+
+.mobile-menu-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.hamburger-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background-color: var(--text-primary);
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.mobile-menu-btn[aria-expanded="true"] .hamburger-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.mobile-menu-btn[aria-expanded="true"] .hamburger-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-btn[aria-expanded="true"] .hamburger-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ==========================================================================
+   Accessible Toast Notification System
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+  max-width: calc(100vw - 32px);
+  width: 380px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  color: var(--text-primary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: auto;
+  font-size: 13px;
+  animation: slideToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.toast-success {
+  border-left: 4px solid var(--success);
+}
+
+.toast.toast-error {
+  border-left: 4px solid var(--danger);
+}
+
+.toast.toast-warning {
+  border-left: 4px solid var(--warning);
+}
+
+.toast.toast-info {
+  border-left: 4px solid var(--accent-primary);
+}
+
+.toast-message {
+  flex: 1;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s, background 0.2s;
+}
+
+.toast-close-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.toast-close-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+}
+
+@keyframes slideToastIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   Accessible Token / Judge Dialog Modal
+   ========================================================================== */
+.token-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 16px;
+  animation: fadeInModal 0.2s ease forwards;
+}
+
+.token-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.token-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.token-modal-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.token-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.token-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.token-input:focus {
+  border-color: var(--border-focus);
+}
+
+.token-input-error {
+  color: var(--danger);
+  font-size: 12px;
+  display: none;
+}
+
+.token-input-error.visible {
+  display: block;
+}
+
+.token-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Responsive Breakpoints & Mobile Optimization
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .app-container {
+    padding: 16px 20px;
+  }
+  .main-layout {
+    gap: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .header-controls {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    left: 0;
+    background: rgba(18, 24, 38, 0.98);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    z-index: 95;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+  }
+
+  .header-controls.menu-open {
+    display: flex;
+    animation: fadeInDown 0.25s ease forwards;
+  }
+
+  .header-controls .control-group {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-controls .control-group label {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .header-controls .custom-select,
+  .header-controls .btn,
+  .header-controls .lang-btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: 14px;
+    justify-content: center;
+  }
+
+  .status-indicator {
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .app-header {
+    padding: 10px 14px;
+  }
+
+  .brand-title h1 {
+    font-size: 17px;
+  }
+
+  .sub-title {
+    font-size: 10px;
+  }
+
+  .app-footer {
+    flex-direction: column;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  /* Minimum touch target size 44x44px on mobile devices */
+  .btn, .btn-sm, .custom-select, .lang-btn, .tab-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .footer-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    padding: 8px 8px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-badge {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
+  .telemetry-summary-cards,
+  .heuristics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .decision-actions {
+    flex-direction: column;
+  }
+
+  .decision-actions .btn {
+    min-height: 44px;
+  }
+
+  .audit-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .audit-actions {
+    flex-wrap: wrap;
+  }
+
+  .audit-actions .btn {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  .toast-container {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .prompt-banner {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 340px) {
+  .brand-title h1 {
+    font-size: 14px;
+  }
+  .metrics-bar {
+    grid-template-columns: 1fr;
+  }
+  .tab-btn {
+    padding: 10px 4px;
+    font-size: 11px;
+  }
+}
+
 

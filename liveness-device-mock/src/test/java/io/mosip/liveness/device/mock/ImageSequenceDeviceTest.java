@@ -27,51 +27,52 @@ class ImageSequenceDeviceTest {
     @Test
     @DisplayName("Device connects, reports L0 security level and notifies status listeners")
     void testConnectAndCapabilities() {
-        ImageSequenceDevice device = new ImageSequenceDevice("TEST_MOCK_DEV", List.of(createMockFrame(320, 240)), 30, true);
+        try (ImageSequenceDevice device = new ImageSequenceDevice("TEST_MOCK_DEV", List.of(createMockFrame(320, 240)), 30, true)) {
+            AtomicReference<DeviceStatus> reportedStatus = new AtomicReference<>();
+            DeviceStatusListener listener = (d, oldStatus, newStatus, msg) -> reportedStatus.set(newStatus);
+            device.addStatusListener(listener);
 
-        AtomicReference<DeviceStatus> reportedStatus = new AtomicReference<>();
-        DeviceStatusListener listener = (d, oldStatus, newStatus, msg) -> reportedStatus.set(newStatus);
-        device.addStatusListener(listener);
+            device.connect();
+            assertThat(device.getStatus()).isEqualTo(DeviceStatus.CONNECTED);
+            assertThat(reportedStatus.get()).isEqualTo(DeviceStatus.CONNECTED);
 
-        device.connect();
-        assertThat(device.getStatus()).isEqualTo(DeviceStatus.CONNECTED);
-        assertThat(reportedStatus.get()).isEqualTo(DeviceStatus.CONNECTED);
+            DeviceCapabilities caps = device.getCapabilities();
+            assertThat(caps.deviceId()).isEqualTo("TEST_MOCK_DEV");
+            assertThat(caps.securityLevel()).isEqualTo(SecurityLevel.L0);
+            assertThat(caps.supportedFormats()).contains(PixelFormat.RGB_888);
 
-        DeviceCapabilities caps = device.getCapabilities();
-        assertThat(caps.deviceId()).isEqualTo("TEST_MOCK_DEV");
-        assertThat(caps.securityLevel()).isEqualTo(SecurityLevel.L0);
-        assertThat(caps.supportedFormats()).contains(PixelFormat.RGB_888);
-
-        device.disconnect();
-        assertThat(device.getStatus()).isEqualTo(DeviceStatus.DISCONNECTED);
-        assertThat(reportedStatus.get()).isEqualTo(DeviceStatus.DISCONNECTED);
+            device.disconnect();
+            assertThat(device.getStatus()).isEqualTo(DeviceStatus.DISCONNECTED);
+            assertThat(reportedStatus.get()).isEqualTo(DeviceStatus.DISCONNECTED);
+        }
     }
 
     @Test
     @DisplayName("startStream streams frames to consumer and captureStill returns latest")
     void testStreamingAndCaptureStill() throws InterruptedException {
-        ImageSequenceDevice device = new ImageSequenceDevice("STREAM_DEV", List.of(createMockFrame(100, 100)), 20, true);
-        device.connect();
+        try (ImageSequenceDevice device = new ImageSequenceDevice("STREAM_DEV", List.of(createMockFrame(100, 100)), 20, true)) {
+            device.connect();
 
-        CountDownLatch latch = new CountDownLatch(3);
-        List<FaceFrame> received = new ArrayList<>();
+            CountDownLatch latch = new CountDownLatch(3);
+            List<FaceFrame> received = new ArrayList<>();
 
-        device.startStream(frame -> {
-            received.add(frame);
-            latch.countDown();
-        });
+            device.startStream(frame -> {
+                received.add(frame);
+                latch.countDown();
+            });
 
-        boolean completed = latch.await(2, TimeUnit.SECONDS);
-        device.stopStream();
+            boolean completed = latch.await(2, TimeUnit.SECONDS);
+            device.stopStream();
 
-        assertThat(completed).isTrue();
-        assertThat(received.size()).isGreaterThanOrEqualTo(3);
+            assertThat(completed).isTrue();
+            assertThat(received.size()).isGreaterThanOrEqualTo(3);
 
-        FaceFrame still = device.captureStill();
-        assertThat(still).isNotNull();
-        assertThat(still.getWidth()).isEqualTo(100);
-        assertThat(still.getHeight()).isEqualTo(100);
+            FaceFrame still = device.captureStill();
+            assertThat(still).isNotNull();
+            assertThat(still.getWidth()).isEqualTo(100);
+            assertThat(still.getHeight()).isEqualTo(100);
 
-        device.disconnect();
+            device.disconnect();
+        }
     }
 }

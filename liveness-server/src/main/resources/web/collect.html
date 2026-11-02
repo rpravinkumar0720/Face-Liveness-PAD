@@ -3,31 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOSIP PAD Dataset Collector</title>
-  <link rel="stylesheet" href="style.css">
+  <title>MOSIP Evaluation Dataset Collector &amp; Benchmark Recorder</title>
+  <meta name="description" content="Capture standardized video frames and facial landmark sidecars for ISO/IEC 30107-3 biometric presentation attack detection benchmark evaluation and analysis.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#0a0e17">
+  <link rel="stylesheet" href="/style.css">
   <style>
     .collect-box {
       max-width: 800px;
-      margin: 40px auto;
+      margin: 24px auto 40px auto;
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 24px;
+      padding: clamp(16px, 4vw, 28px);
+      box-shadow: var(--shadow-main);
+      width: 100%;
+      box-sizing: border-box;
     }
     .preview-box {
       position: relative;
       width: 100%;
-      height: 380px;
+      height: clamp(240px, 50vw, 380px);
       background: #000;
       border-radius: var(--radius-md);
       overflow: hidden;
       margin-bottom: 20px;
+      border: 1px solid var(--border-color);
     }
     .collect-controls {
       display: flex;
-      gap: 12px;
-      align-items: center;
+      gap: 14px;
+      align-items: flex-end;
       flex-wrap: wrap;
+    }
+    .collect-controls .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .collect-controls label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .collect-controls .custom-select,
+    .collect-controls .btn {
+      min-height: 44px;
+      font-size: 13px;
+    }
+    .input-error-msg {
+      color: var(--danger);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    .camera-error-banner {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    @media (max-width: 600px) {
+      .collect-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .collect-controls .control-group {
+        width: 100%;
+      }
+      .collect-controls .custom-select,
+      .collect-controls .btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -35,18 +93,25 @@
   <div class="app-container">
     <header class="app-header">
       <div class="brand">
-        <div class="brand-badge">MOSIP</div>
+        <a href="/" class="brand-link" aria-label="MOSIP Face Liveness Home">
+          <div class="brand-badge">MOSIP</div>
+        </a>
         <div class="brand-title">
           <h1>Evaluation Dataset Collector</h1>
           <span class="sub-title">Records video frames and landmark sidecar JSON for liveness-eval benchmark</span>
         </div>
       </div>
       <div>
-        <a href="/" class="btn btn-secondary">Back to Live Verification</a>
+        <a href="/" class="btn btn-secondary" style="min-height:44px; display:inline-flex; align-items:center;">← Live Verification</a>
       </div>
     </header>
 
-    <main class="collect-box">
+    <main class="collect-box" role="main">
+      <div id="collectCameraError" class="camera-error-banner hidden" role="alert">
+        <span>⚠️</span>
+        <span id="collectCameraErrorMsg">Camera access denied. Please enable camera permissions in your browser.</span>
+      </div>
+
       <div class="preview-box">
         <video id="collectVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></video>
         <canvas id="collectCanvas" style="display:none;"></canvas>
@@ -77,30 +142,46 @@
         </div>
 
         <div class="control-group">
-          <label for="frameCountInput">Frames to capture:</label>
-          <input type="number" id="frameCountInput" value="10" min="5" max="30" class="custom-select" style="width:80px;">
+          <label for="frameCountInput">Frames to capture (5-30):</label>
+          <input type="number" id="frameCountInput" value="10" min="5" max="30" class="custom-select" style="min-width:100px;">
+          <span id="frameCountError" class="input-error-msg hidden" role="alert">Must be between 5 and 30 frames</span>
         </div>
 
-        <button id="btnStartCollect" class="btn btn-primary">Start Recording</button>
-        <span id="collectStatus" style="font-size: 13px; color: var(--text-secondary); margin-left: 10px;">Ready</span>
+        <button type="button" id="btnStartCollect" class="btn btn-primary" style="min-height:44px;">Start Recording</button>
+        <span id="collectStatus" role="status" aria-live="polite" style="font-size: 13px; color: var(--text-secondary); align-self:center;">Ready</span>
       </div>
 
-      <div style="margin-top: 24px; font-size: 12px; color: var(--text-muted); line-height: 1.6;">
-        <p><strong>Instructions:</strong></p>
-        <ol style="padding-left: 20px;">
+      <div style="margin-top: 28px; font-size: 12px; color: var(--text-muted); line-height: 1.6; border-top: 1px solid var(--border-color); padding-top: 20px;">
+        <p><strong style="color: var(--text-primary);">Collection Guidelines:</strong></p>
+        <ol style="padding-left: 20px; margin-top: 8px;">
           <li>Position the live subject or attack presentation in front of the webcam.</li>
           <li>Select the presentation category and expected active challenge.</li>
-          <li>Click "Start Recording". Consecutive frames (640x480 at q0.85) will be captured alongside facial landmarks.</li>
+          <li>Click <strong>Start Recording</strong>. Consecutive frames (640x480 at q0.85) will be captured alongside facial landmarks.</li>
           <li>Frames will be downloaded as JPEGs, <code>.json</code> landmark sidecars, and a matching <code>timeline.json</code> challenge timeline.</li>
           <li>Organize into directories: <code>datasets/genuine/sample_01/</code>, <code>datasets/print/sample_01/</code>, etc. for evaluation via <code>liveness-eval</code>.</li>
         </ol>
       </div>
     </main>
+
+    <footer class="app-footer">
+      <span>&copy; <span class="current-year"></span> MOSIP Open Source Project. All rights reserved. Zero-biometric disk footprint.</span>
+      <div class="footer-links">
+        <a href="/" class="footer-link">Live Verification</a>
+        <a href="/collect.html" class="footer-link">Dataset Collector</a>
+        <a href="/api/health" target="_blank" rel="noopener noreferrer" class="footer-link">✓ API Health</a>
+        <a href="mailto:support@mosip.io" class="footer-link">✉️ support@mosip.io</a>
+        <a href="tel:+918067890000" class="footer-link">📞 +91 (80) 6789-0000</a>
+      </div>
+    </footer>
   </div>
 
   <script type="module">
     const CDN_VISION_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
     const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+
+    document.querySelectorAll('.current-year').forEach(el => {
+      el.textContent = new Date().getFullYear();
+    });
 
     let faceLandmarker = null;
     let video = document.getElementById('collectVideo');
@@ -108,8 +189,17 @@
     let ctx = canvas.getContext('2d');
 
     async function init() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-      video.srcObject = stream;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        video.srcObject = stream;
+      } catch (err) {
+        const errBanner = document.getElementById('collectCameraError');
+        const errMsg = document.getElementById('collectCameraErrorMsg');
+        if (errBanner) {
+          errBanner.classList.remove('hidden');
+          errMsg.textContent = `Camera access error: ${err.message}. Please allow webcam access.`;
+        }
+      }
 
       try {
         const vision = await import(/* webpackIgnore: true */ `${CDN_VISION_URL}/vision_bundle.mjs`);
@@ -127,9 +217,19 @@
     init();
 
     document.getElementById('btnStartCollect').addEventListener('click', async () => {
+      const frameInput = document.getElementById('frameCountInput');
+      const frameErr = document.getElementById('frameCountError');
+      const totalFrames = parseInt(frameInput.value, 10);
+
+      if (isNaN(totalFrames) || totalFrames < 5 || totalFrames > 30) {
+        frameErr.classList.remove('hidden');
+        frameInput.focus();
+        return;
+      }
+      frameErr.classList.add('hidden');
+
       const label = document.getElementById('labelSelect').value;
       const challengeType = document.getElementById('challengeSelect').value;
-      const totalFrames = parseInt(document.getElementById('frameCountInput').value, 10) || 10;
       const status = document.getElementById('collectStatus');
 
       status.innerText = `Recording 0/${totalFrames}...`;
@@ -148,13 +248,17 @@
 
         let landmarks = [];
         if (faceLandmarker) {
-          const res = faceLandmarker.detectForVideo(video, performance.now());
-          if (res && res.faceLandmarks && res.faceLandmarks.length > 0) {
-            landmarks = res.faceLandmarks[0].map(p => [
-              Math.round(p.x * 10000) / 10000,
-              Math.round(p.y * 10000) / 10000,
-              Math.round((p.z || 0) * 10000) / 10000
-            ]);
+          try {
+            const res = faceLandmarker.detectForVideo(video, performance.now());
+            if (res && res.faceLandmarks && res.faceLandmarks.length > 0) {
+              landmarks = res.faceLandmarks[0].map(p => [
+                Math.round(p.x * 10000) / 10000,
+                Math.round(p.y * 10000) / 10000,
+                Math.round((p.z || 0) * 10000) / 10000
+              ]);
+            }
+          } catch (lmErr) {
+            console.warn('Landmark detection pass skipped:', lmErr);
           }
         }
 

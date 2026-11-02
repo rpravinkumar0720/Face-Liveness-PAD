@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="mosipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <!-- Background rounded squircle -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#mosipGrad)" />
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#shieldGrad)" />
+  
+  <!-- Biometric Face / Oval Guide Contour -->
+  <ellipse cx="32" cy="30" rx="14" ry="17" fill="none" stroke="url(#mosipGrad)" stroke-width="2.5" stroke-dasharray="3 1.5" />
+  
+  <!-- Face Landmark Nodes -->
+  <circle cx="26" cy="26" r="2" fill="#60a5fa" />
+  <circle cx="38" cy="26" r="2" fill="#60a5fa" />
+  <circle cx="32" cy="32" r="1.5" fill="#a78bfa" />
+  <path d="M27 37 Q32 41 37 37" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" />
+  
+  <!-- Security Shield & Check Indicator at bottom-right -->
+  <circle cx="48" cy="48" r="11" fill="#0f172a" stroke="#10b981" stroke-width="2" />
+  <path d="M43 48 L46.5 51.5 L53 45" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

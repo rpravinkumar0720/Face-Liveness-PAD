@@ -3,8 +3,6 @@ package io.mosip.liveness.core.analyzer;
 import io.mosip.liveness.api.quality.BoundingBox;
 import io.mosip.liveness.api.quality.FaceLandmarks;
 
-import java.util.Objects;
-
 /**
  * Observed face metadata extracted by landmark analyzer or face detector.
  */

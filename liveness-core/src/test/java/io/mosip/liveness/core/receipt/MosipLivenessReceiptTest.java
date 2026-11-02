@@ -1,6 +1,5 @@
 package io.mosip.liveness.core.receipt;
 
-import io.mosip.liveness.api.decision.DecisionType;
 import io.mosip.liveness.api.decision.LivenessDecision;
 import io.mosip.liveness.api.policy.LivenessPolicy;
 import io.mosip.liveness.api.policy.WorkflowType;
@@ -8,7 +7,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;

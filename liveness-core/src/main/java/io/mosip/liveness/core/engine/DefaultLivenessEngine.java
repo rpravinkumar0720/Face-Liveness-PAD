@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -261,8 +260,8 @@ public class DefaultLivenessEngine implements LivenessEngine {
                 FaceObservation clientObs = clientObsOpt.get();
 
                 // Cross-validate client landmarks vs server detection
-                io.mosip.liveness.core.analyzer.LandmarkCrossValidator.LandmarkValidationResult val =
-                        io.mosip.liveness.core.analyzer.LandmarkCrossValidator.validate(clientObs, serverObs);
+                LandmarkCrossValidator.LandmarkValidationResult val =
+                        LandmarkCrossValidator.validate(clientObs, serverObs);
 
                 if (!val.valid()) {
                     recordAudit(ctx, AuditEventType.LANDMARK_MISMATCH, DecisionType.REJECTED,

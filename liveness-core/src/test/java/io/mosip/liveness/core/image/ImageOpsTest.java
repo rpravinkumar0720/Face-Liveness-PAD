@@ -6,8 +6,6 @@ import io.mosip.liveness.api.quality.BoundingBox;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Random;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ImageOpsTest {
@@ -38,13 +36,6 @@ class ImageOpsTest {
                 data[idx + 2] = (byte) val;
             }
         }
-        return data;
-    }
-
-    private static byte[] createNoiseRgb(int width, int height, long seed) {
-        Random rand = new Random(seed);
-        byte[] data = new byte[width * height * 3];
-        rand.nextBytes(data);
         return data;
     }
 

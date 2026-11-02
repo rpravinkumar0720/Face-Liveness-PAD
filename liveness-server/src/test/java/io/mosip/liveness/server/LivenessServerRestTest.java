@@ -310,4 +310,76 @@ class LivenessServerRestTest {
         HttpResponse<String> replayResp = client.send(validReq, HttpResponse.BodyHandlers.ofString());
         assertThat(replayResp.statusCode()).isEqualTo(403);
     }
+
+    @Test
+    @DisplayName("Custom 404: Returns branded HTML on browser navigation to unknown path")
+    void custom404HtmlHandler() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/nonexistent-page-url"))
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                .GET()
+                .build();
+
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+        assertThat(resp.statusCode()).isEqualTo(404);
+        assertThat(resp.headers().firstValue("Content-Type").orElse("")).contains("text/html");
+        assertThat(resp.body()).contains("Page Not Found");
+        assertThat(resp.body()).contains("404");
+    }
+
+    @Test
+    @DisplayName("Custom 404: Returns JSON on unknown /api/* endpoint")
+    void custom404ApiJsonHandler() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/v1/unknown-endpoint"))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+        assertThat(resp.statusCode()).isEqualTo(404);
+        assertThat(resp.headers().firstValue("Content-Type").orElse("")).contains("application/json");
+
+        JsonNode json = mapper.readTree(resp.body());
+        assertThat(json.path("error").asText()).isEqualTo("Not Found");
+        assertThat(json.path("status").asInt()).isEqualTo(404);
+        assertThat(json.path("path").asText()).isEqualTo("/api/v1/unknown-endpoint");
+    }
+
+    @Test
+    @DisplayName("Custom 404: Missing static asset returns plain 404, not HTML")
+    void custom404StaticAssetHandler() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/vendor/missing-library.js"))
+                .header("Accept", "*/*")
+                .GET()
+                .build();
+
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+        assertThat(resp.statusCode()).isEqualTo(404);
+        assertThat(resp.headers().firstValue("Content-Type").orElse("")).doesNotContain("text/html");
+    }
+
+    @Test
+    @DisplayName("Convenience Redirects: /health -> /api/health and /collect -> /collect.html")
+    void convenienceRedirects() throws Exception {
+        HttpClient noRedirectClient = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+
+        HttpRequest healthReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/health"))
+                .GET()
+                .build();
+        HttpResponse<Void> healthResp = noRedirectClient.send(healthReq, HttpResponse.BodyHandlers.discarding());
+        assertThat(healthResp.statusCode()).isEqualTo(302);
+        assertThat(healthResp.headers().firstValue("Location").orElse("")).isEqualTo("/api/health");
+
+        HttpRequest collectReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/collect"))
+                .GET()
+                .build();
+        HttpResponse<Void> collectResp = noRedirectClient.send(collectReq, HttpResponse.BodyHandlers.discarding());
+        assertThat(collectResp.statusCode()).isEqualTo(302);
+        assertThat(collectResp.headers().firstValue("Location").orElse("")).isEqualTo("/collect.html");
+    }
 }

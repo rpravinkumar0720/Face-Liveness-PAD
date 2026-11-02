@@ -86,6 +86,10 @@ const UI_STRINGS = {
 document.addEventListener('DOMContentLoaded', async () => {
   initElements();
   initEventListeners();
+  initMobileMenu();
+  initTokenModal();
+  initFooterNavigation();
+  initCopyrightYear();
   updateJudgeModeUI();
   loadPolicyDetails(currentWorkflow);
   checkServerHealth();
@@ -114,6 +118,169 @@ function initElements() {
   captureCtx = captureCanvas.getContext('2d');
 }
 
+function initCopyrightYear() {
+  const el = document.getElementById('copyrightYear');
+  if (el) {
+    el.textContent = new Date().getFullYear();
+  }
+}
+
+// Accessible Toast Notification System
+function showToast(message, type = 'info', duration = 4000) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+  const msgEl = document.createElement('div');
+  msgEl.className = 'toast-message';
+  msgEl.textContent = message;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'toast-close-btn';
+  closeBtn.setAttribute('aria-label', 'Dismiss notification');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.onclick = () => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    setTimeout(() => toast.remove(), 300);
+  };
+
+  toast.appendChild(msgEl);
+  toast.appendChild(closeBtn);
+  container.appendChild(toast);
+
+  if (duration > 0) {
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, duration);
+  }
+}
+
+// Mobile Hamburger Menu Navigation
+function initMobileMenu() {
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const headerControls = document.getElementById('headerControls');
+  if (!mobileMenuBtn || !headerControls) return;
+
+  function toggleMenu(forceState) {
+    const currentState = mobileMenuBtn.getAttribute('aria-expanded') === 'true';
+    const nextState = forceState !== undefined ? forceState : !currentState;
+    mobileMenuBtn.setAttribute('aria-expanded', String(nextState));
+    headerControls.classList.toggle('menu-open', nextState);
+  }
+
+  mobileMenuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMenu();
+  });
+
+  // Close when an action or selection is made on mobile
+  headerControls.querySelectorAll('button, select').forEach(ctrl => {
+    ctrl.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        toggleMenu(false);
+      }
+    });
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      if (headerControls.classList.contains('menu-open')) {
+        toggleMenu(false);
+        mobileMenuBtn.focus();
+      }
+    }
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 && headerControls.classList.contains('menu-open')) {
+      if (!headerControls.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+        toggleMenu(false);
+      }
+    }
+  });
+}
+
+// Footer Quick Navigation
+function initFooterNavigation() {
+  document.getElementById('footerLinkPolicy')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('tabBtnPolicy')?.click();
+    document.getElementById('sidebarSection')?.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  document.getElementById('footerLinkAudit')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('tabBtnAudit')?.click();
+    document.getElementById('sidebarSection')?.scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+// Accessible Token Modal for Judge Mode
+function initTokenModal() {
+  const tokenOverlay = document.getElementById('tokenModalOverlay');
+  const tokenInput = document.getElementById('adminTokenInput');
+  const tokenError = document.getElementById('tokenInputError');
+  const btnSubmitToken = document.getElementById('btnSubmitToken');
+  const btnCancelToken = document.getElementById('btnCancelToken');
+  if (!tokenOverlay || !tokenInput) return;
+
+  window.openTokenModal = function() {
+    tokenOverlay.classList.remove('hidden');
+    tokenInput.value = '';
+    tokenError.classList.remove('visible');
+    setTimeout(() => tokenInput.focus(), 60);
+  };
+
+  window.closeTokenModal = function() {
+    tokenOverlay.classList.add('hidden');
+    tokenInput.value = '';
+    tokenError.classList.remove('visible');
+    document.getElementById('btnJudgeMode')?.focus();
+  };
+
+  btnCancelToken?.addEventListener('click', window.closeTokenModal);
+  btnSubmitToken?.addEventListener('click', () => {
+    const val = tokenInput.value.trim();
+    if (!val) {
+      tokenError.classList.add('visible');
+      tokenInput.focus();
+      return;
+    }
+    adminToken = val;
+    sessionStorage.setItem('mosip_admin_token', adminToken);
+    window.closeTokenModal();
+    updateJudgeModeUI();
+    loadPolicyDetails(currentWorkflow);
+    resetAndReconnect();
+    showToast('Judge Mode unlocked successfully.', 'success');
+  });
+
+  tokenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      btnSubmitToken.click();
+    } else if (e.key === 'Escape') {
+      window.closeTokenModal();
+    }
+  });
+
+  tokenOverlay.addEventListener('click', (e) => {
+    if (e.target === tokenOverlay) {
+      window.closeTokenModal();
+    }
+  });
+}
+
 function initEventListeners() {
   document.getElementById('workflowSelect').addEventListener('change', (e) => {
     currentWorkflow = e.target.value;
@@ -137,7 +304,11 @@ function initEventListeners() {
     });
   });
 
-  document.getElementById('btnRetry').addEventListener('click', resetAndReconnect);
+  document.getElementById('btnRetry').addEventListener('click', () => {
+    resetAndReconnect();
+    showToast('Starting new biometric verification session...', 'info', 2000);
+  });
+
   document.getElementById('btnRetryCamera').addEventListener('click', () => {
     document.getElementById('cameraErrorOverlay').classList.add('hidden');
     initCamera().then(() => connectWebSocket());
@@ -174,21 +345,15 @@ function initEventListeners() {
   // Judge Mode Unlock
   document.getElementById('btnJudgeMode')?.addEventListener('click', () => {
     if (adminToken) {
-      if (confirm('Judge Mode is currently active. Would you like to exit Judge Mode?')) {
-        adminToken = '';
-        sessionStorage.removeItem('mosip_admin_token');
-        updateJudgeModeUI();
-        loadPolicyDetails(currentWorkflow);
-        resetAndReconnect();
-      }
+      adminToken = '';
+      sessionStorage.removeItem('mosip_admin_token');
+      updateJudgeModeUI();
+      loadPolicyDetails(currentWorkflow);
+      resetAndReconnect();
+      showToast('Judge Mode exited. Returned to standard view.', 'info');
     } else {
-      const token = prompt('Enter Admin/Judge Token (LIVENESS_ADMIN_TOKEN):', 'mosip-admin-token-2026');
-      if (token && token.trim()) {
-        adminToken = token.trim();
-        sessionStorage.setItem('mosip_admin_token', adminToken);
-        updateJudgeModeUI();
-        loadPolicyDetails(currentWorkflow);
-        resetAndReconnect();
+      if (typeof window.openTokenModal === 'function') {
+        window.openTokenModal();
       }
     }
   });
@@ -795,7 +960,7 @@ function renderAuditTable(events) {
 
 async function verifyAuditChain() {
   if (!localAuditEvents || localAuditEvents.length === 0) {
-    alert('No events to verify. Run a liveness verification capture first.');
+    showToast('No events to verify. Run a liveness verification capture first.', 'info');
     return;
   }
 
@@ -810,7 +975,7 @@ async function verifyAuditChain() {
       body: JSON.stringify(localAuditEvents)
     });
     if (res.status === 401) {
-      alert('Audit verification requires Admin/Judge Token (click Judge Mode).');
+      showToast('Audit verification requires Admin/Judge Token (click Judge Mode in header).', 'warning');
       return;
     }
     const result = await res.json();
@@ -823,19 +988,21 @@ async function verifyAuditChain() {
       badge.className = 'verification-badge valid';
       badge.querySelector('.badge-icon').innerText = '✓';
       text.innerText = UI_STRINGS[currentLang].chainValid;
+      showToast('Cryptographic audit chain verified: All SHA-256 event links are intact.', 'success');
     } else {
       badge.className = 'verification-badge invalid';
       badge.querySelector('.badge-icon').innerText = '✕';
       text.innerText = `${UI_STRINGS[currentLang].chainBroken} #${result.firstBrokenIndex} (${result.message})`;
+      showToast(`Audit chain broken at event #${result.firstBrokenIndex}!`, 'error');
     }
   } catch (err) {
-    alert('Verification request failed: ' + err.message);
+    showToast('Verification request failed: ' + err.message, 'error');
   }
 }
 
 async function tamperAndVerifyAuditChain() {
   if (!localAuditEvents || localAuditEvents.length === 0) {
-    alert('No events recorded yet. Complete a verification first to generate audit records.');
+    showToast('No events recorded yet. Complete a verification first to generate audit records.', 'info');
     return;
   }
 
@@ -854,7 +1021,7 @@ async function tamperAndVerifyAuditChain() {
       body: JSON.stringify(tamperedChain)
     });
     if (res.status === 401) {
-      alert('Audit verification requires Admin/Judge Token (click Judge Mode).');
+      showToast('Audit verification requires Admin/Judge Token (click Judge Mode in header).', 'warning');
       return;
     }
     const result = await res.json();
@@ -865,8 +1032,9 @@ async function tamperAndVerifyAuditChain() {
     badge.className = 'verification-badge invalid';
     badge.querySelector('.badge-icon').innerText = '🛡️';
     text.innerText = `Tamper Detected! Chain Linkage Broken at Event #${result.firstBrokenIndex} (${result.message})`;
+    showToast('Simulated local log edit: Chain correctly detected SHA-256 hash mismatch!', 'warning');
   } catch (err) {
-    alert('Verification request failed: ' + err.message);
+    showToast('Verification request failed: ' + err.message, 'error');
   }
 }
 

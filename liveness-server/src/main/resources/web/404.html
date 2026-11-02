@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404: Page Not Found | MOSIP Face Liveness &amp; PAD Verification</title>
+  <meta name="description" content="The requested page could not be found. Return to MOSIP biometric face liveness verification, launch the dataset collector, or check system API health.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .not-found-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      padding: 40px 16px;
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .not-found-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      width: 100%;
+      box-shadow: var(--shadow-main);
+    }
+    .error-code {
+      font-size: clamp(64px, 14vw, 108px);
+      font-weight: 700;
+      line-height: 1;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      font-family: var(--font-mono);
+    }
+    .not-found-title {
+      font-size: clamp(20px, 4vw, 26px);
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: var(--text-primary);
+    }
+    .not-found-message {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .nav-actions .btn {
+      min-height: 44px;
+      min-width: 140px;
+      padding: 10px 20px;
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .error-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-bottom: 20px;
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <a href="/" class="brand-link" aria-label="MOSIP Face Liveness Home">
+          <div class="brand-badge">MOSIP</div>
+        </a>
+        <div class="brand-title">
+          <h1>Face Liveness &amp; PAD</h1>
+          <span class="sub-title">ISO/IEC 19794-5 &amp; ISO 30107 Reference Engine</span>
+        </div>
+      </div>
+      <div>
+        <a href="/" class="btn btn-secondary" style="min-height:44px; display:inline-flex; align-items:center;">← Return Home</a>
+      </div>
+    </header>
+
+    <main class="not-found-container" role="main">
+      <div class="not-found-card">
+        <div class="error-badge">⚠️ RESOURCE NOT LOCATED</div>
+        <div class="error-code" aria-hidden="true">404</div>
+        <h2 class="not-found-title">Page Not Found</h2>
+        <p class="not-found-message">
+          The requested path could not be found on this MOSIP biometric server.
+          The resource may have moved, expired, or the endpoint URL was typed incorrectly.
+        </p>
+        <div class="nav-actions">
+          <a href="/" class="btn btn-primary" id="btn404Home">🏠 Live Verification</a>
+          <a href="/collect.html" class="btn btn-secondary" id="btn404Collect">📊 Dataset Collector</a>
+          <a href="/api/health" class="btn btn-secondary" id="btn404Health">✓ API Health</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <span>&copy; <span class="current-year"></span> MOSIP Open Source Project. All rights reserved. Zero-biometric disk footprint.</span>
+      <div class="footer-links">
+        <a href="/" class="footer-link">Home</a>
+        <a href="/collect.html" class="footer-link">Dataset Collector</a>
+        <a href="/api/health" target="_blank" rel="noopener noreferrer" class="footer-link">✓ API Health</a>
+        <a href="mailto:support@mosip.io" class="footer-link">✉️ support@mosip.io</a>
+        <a href="tel:+918067890000" class="footer-link">📞 +91 (80) 6789-0000</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    document.querySelectorAll('.current-year').forEach(el => {
+      el.textContent = new Date().getFullYear();
+    });
+  </script>
+</body>
+</html>

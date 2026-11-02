@@ -10,8 +10,10 @@ import java.util.List;
 
 /**
  * Pure Java server-side face detector and multi-face counter.
- * Analyzes raw frame pixels using skin-color segmentation, connected-component analysis,
- * and internal facial contrast (eye/mouth structures) to detect and count faces.
+ * Analyzes raw frame pixels using skin-color segmentation, connected-component
+ * analysis,
+ * and internal facial contrast (eye/mouth structures) to detect and count
+ * faces.
  */
 public final class ServerFaceDetector {
 
@@ -73,7 +75,7 @@ public final class ServerFaceDetector {
         for (int gy = 0; gy < gridH; gy++) {
             for (int gx = 0; gx < gridW; gx++) {
                 if (isSkin[gy][gx] && !visited[gy][gx]) {
-                    int[] box = new int[]{gx, gx, gy, gy, 0};
+                    int[] box = new int[] { gx, gx, gy, gy, 0 };
                     floodFill(isSkin, visited, gx, gy, gridW, gridH, box);
                     // Filter candidate face components: minimum 15 grid pixels
                     if (box[4] >= 15) {
@@ -93,7 +95,8 @@ public final class ServerFaceDetector {
 
             float boxW = right - left;
             float boxH = bottom - top;
-            if (boxW <= 0 || boxH <= 0) continue;
+            if (boxW <= 0 || boxH <= 0)
+                continue;
 
             float aspect = boxH / boxW;
             if (aspect >= 0.65f && aspect <= 2.2f && (boxW * boxH) >= 0.04f) {
@@ -133,9 +136,10 @@ public final class ServerFaceDetector {
         return FaceObservation.singleFace(box, landmarks, 0.88);
     }
 
-    private static void floodFill(boolean[][] isSkin, boolean[][] visited, int gx, int gy, int gridW, int gridH, int[] box) {
+    private static void floodFill(boolean[][] isSkin, boolean[][] visited, int gx, int gy, int gridW, int gridH,
+            int[] box) {
         List<int[]> queue = new ArrayList<>();
-        queue.add(new int[]{gx, gy});
+        queue.add(new int[] { gx, gy });
         visited[gy][gx] = true;
 
         int head = 0;
@@ -145,30 +149,36 @@ public final class ServerFaceDetector {
             int cy = pt[1];
             box[4]++;
 
-            if (cx < box[0]) box[0] = cx;
-            if (cx > box[1]) box[1] = cx;
-            if (cy < box[2]) box[2] = cy;
-            if (cy > box[3]) box[3] = cy;
+            if (cx < box[0])
+                box[0] = cx;
+            if (cx > box[1])
+                box[1] = cx;
+            if (cy < box[2])
+                box[2] = cy;
+            if (cy > box[3])
+                box[3] = cy;
 
-            int[] dx = {1, -1, 0, 0};
-            int[] dy = {0, 0, 1, -1};
+            int[] dx = { 1, -1, 0, 0 };
+            int[] dy = { 0, 0, 1, -1 };
             for (int i = 0; i < 4; i++) {
                 int nx = cx + dx[i];
                 int ny = cy + dy[i];
                 if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH && isSkin[ny][nx] && !visited[ny][nx]) {
                     visited[ny][nx] = true;
-                    queue.add(new int[]{nx, ny});
+                    queue.add(new int[] { nx, ny });
                 }
             }
         }
     }
 
-    private static boolean hasFacialContrast(byte[] data, int w, int h, int bpp, float left, float top, float right, float bottom) {
+    private static boolean hasFacialContrast(byte[] data, int w, int h, int bpp, float left, float top, float right,
+            float bottom) {
         int x1 = Math.max(0, (int) (left * w));
         int x2 = Math.min(w, (int) (right * w));
         int y1 = Math.max(0, (int) (top * h));
         int y2 = Math.min(h, (int) (bottom * h));
-        if (x2 <= x1 || y2 <= y1) return false;
+        if (x2 <= x1 || y2 <= y1)
+            return false;
 
         int midY = y1 + (y2 - y1) / 2;
         long upperLumaSum = 0;
@@ -184,8 +194,10 @@ public final class ServerFaceDetector {
             for (int x = x1; x < x2; x += 4) {
                 int off = (row + x) * bpp;
                 int luma = ((data[off] & 0xFF) + (data[off + 1] & 0xFF) + (data[off + 2] & 0xFF)) / 3;
-                if (luma < minLuma) minLuma = luma;
-                if (luma > maxLuma) maxLuma = luma;
+                if (luma < minLuma)
+                    minLuma = luma;
+                if (luma > maxLuma)
+                    maxLuma = luma;
 
                 if (y < midY) {
                     upperLumaSum += luma;
@@ -197,7 +209,8 @@ public final class ServerFaceDetector {
             }
         }
 
-        // Contrast difference between brightest and darkest region within face should be at least 25
+        // Contrast difference between brightest and darkest region within face should
+        // be at least 25
         int contrastRange = maxLuma - minLuma;
         return contrastRange >= 25;
     }

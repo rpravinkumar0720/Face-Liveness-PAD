@@ -7,7 +7,6 @@ import io.mosip.liveness.api.policy.WorkflowType;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Map;
 import java.util.Objects;
 
 /**

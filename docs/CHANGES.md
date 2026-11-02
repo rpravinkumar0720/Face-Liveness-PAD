@@ -224,3 +224,45 @@ This document maps all identified architectural, security, algorithmic, and pres
 - **Commit:** `feat(p3): judge mode split view, audit verifier cli, offline mediapipe, mosip receipt, docs honesty`
 - **Tests:** `mvn clean verify` green across all 7 modules
 
+---
+
+## Phase P4: Production Hardening, Branded 404, Mobile UX & Tooling
+
+### [P4-1] Accessible Branded 404 Handler & Convenience Redirects
+- **Finding:** Unmapped paths yielded default Jetty 404 plaintext or uncaught errors. Broken asset links could leak server stack traces or return HTML to script loaders causing syntax errors. Missing convenience redirects for `/health` and `/collect`.
+- **Resolution:**
+  - Implemented custom `app.error(HttpStatus.NOT_FOUND, ...)` in `LivenessServerApp.java`.
+  - Serves branded, responsive `404.html` with zero-leakage design, return-to-safety actions, and dynamic year.
+  - Returns structured RFC-compliant JSON (`{"error": "Not Found", "status": 404, "path": "..."}`) for `/api/*` routes.
+  - Preserves non-HTML plain responses for asset files (`.js`, `.css`, etc.) preventing script MIME type parsing errors.
+  - Added seamless 302 redirects: `/health` $\to$ `/api/health`, `/collect` $\to$ `/collect.html`.
+- **Tests:** `LivenessServerRestTest#custom404HtmlHandler`, `LivenessServerRestTest#custom404ApiJsonHandler`, `LivenessServerRestTest#custom404StaticAssetHandler`, `LivenessServerRestTest#convenienceRedirects`
+
+### [P4-2] Mobile Navigation & Minimum Touch Targets
+- **Finding:** Header controls overflowed on mobile viewports (<768px), making workflow selection, language toggle, and Judge Mode inaccessible on phones.
+- **Resolution:**
+  - Added accessible hamburger menu toggle button (`mobileMenuBtn`) with ARIA expanded state, keyboard navigation (`Esc` to dismiss), and backdrop blur.
+  - Enforced $\ge 44\times 44\text{px}$ touch target sizes on buttons and select inputs across mobile breakpoints ($340\text{px}$, $480\text{px}$, $768\text{px}$).
+- **Tests:** Responsive layout verification in browser client
+
+### [P4-3] Accessible Modal Dialogs & Toast Notifications
+- **Finding:** Browser `prompt()` and `alert()` modals blocked the main thread and violated accessibility standards.
+- **Resolution:**
+  - Replaced native `prompt()` for Judge Mode with accessible HTML5 modal (`tokenModalOverlay`), handling autofocus, Enter/Esc keys, and inline validation errors.
+  - Replaced native `alert()` with non-blocking, accessible toast notifications (`showToast()`) with auto-dismiss and screen-reader `role="status"` announcements.
+- **Tests:** UI verification in `app.js`
+
+### [P4-4] Dataset Collector Validation & Error Banners
+- **Finding:** `collect.html` lacked input validation on frame counts and failed silently without actionable user guidance when camera permissions were denied.
+- **Resolution:**
+  - Added input validation for frame capture count ($5\le N\le 30$) with inline error messaging.
+  - Added camera permission error banner (`collectCameraError`) displaying specific browser permission remediation instructions.
+- **Tests:** `collect.html` client verification
+
+### [P4-5] Native Maven Wrapper (`mvnw` / `mvnw.cmd`)
+- **Finding:** Developers without Maven pre-installed in global PATH encountered `mvn: command not found` execution failures.
+- **Resolution:**
+  - Vendored Apache Maven 3.9.9 wrapper (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`) providing zero-configuration out-of-the-box building and testing.
+- **Tests:** `.\mvnw.cmd test` passes across all modules
+
+

@@ -66,8 +66,7 @@ public class LivenessServerApp {
                 new PassiveAnalyzer(),
                 new ChallengeGenerator(),
                 effectiveSink,
-                config.modelPath()
-        );
+                config.modelPath());
         this.engine.setLockoutDurationMillis(config.lockoutSeconds() * 1000L);
         this.wsHandler = new WebSocketHandler(this.engine, config);
         this.tokenService = new SessionTokenService(config.sessionSecret());
@@ -122,13 +121,14 @@ public class LivenessServerApp {
 
             try {
                 JsonNode body = ctx.body().isBlank() ? null : mapper.readTree(ctx.body());
-                String wfStr = body != null ? body.path("workflow").asText("RESIDENT_AUTH") : "RESIDENT_AUTH";
+                String wfStr = (body != null && body.hasNonNull("workflow")) ? body.path("workflow").asText() : "RESIDENT_AUTH";
                 WorkflowType workflow = WorkflowType.RESIDENT_AUTH;
                 try {
                     workflow = WorkflowType.valueOf(wfStr.trim().toUpperCase());
-                } catch (IllegalArgumentException ignored) {}
+                } catch (IllegalArgumentException ignored) {
+                }
 
-                String clientIdentity = body != null ? body.path("clientIdentity").asText("") : "";
+                String clientIdentity = body != null ? body.path("clientIdentity").asText() : "";
                 if (clientIdentity.isBlank()) {
                     clientIdentity = ctx.ip();
                 }
@@ -212,8 +212,8 @@ public class LivenessServerApp {
             try {
                 List<LivenessAuditEvent> events = mapper.readValue(
                         ctx.body(),
-                        new TypeReference<List<LivenessAuditEvent>>() {}
-                );
+                        new TypeReference<List<LivenessAuditEvent>>() {
+                        });
                 AuditChainVerifier.AuditVerificationResult result = AuditChainVerifier.verifySessions(events);
                 Map<String, Object> resp = new LinkedHashMap<>();
                 resp.put("valid", result.valid());
@@ -226,8 +226,7 @@ public class LivenessServerApp {
                 ctx.status(HttpStatus.BAD_REQUEST).json(Map.of(
                         "valid", false,
                         "firstBrokenIndex", -1,
-                        "message", "Malformed audit events payload: " + e.getMessage()
-                ));
+                        "message", "Malformed audit events payload: " + e.getMessage()));
             }
         });
 
@@ -257,8 +256,8 @@ public class LivenessServerApp {
             } catch (IllegalArgumentException e) {
                 ctx.status(HttpStatus.BAD_REQUEST).json(Map.of(
                         "error", "Unknown workflow: " + wfParam,
-                        "validWorkflows", List.of("RESIDENT_AUTH", "RESIDENT_ENROLLMENT", "OPERATOR_AUTH", "SUPERVISOR_AUTH")
-                ));
+                        "validWorkflows",
+                        List.of("RESIDENT_AUTH", "RESIDENT_ENROLLMENT", "OPERATOR_AUTH", "SUPERVISOR_AUTH")));
                 return;
             }
 
@@ -275,8 +274,8 @@ public class LivenessServerApp {
 
             try {
                 JsonNode body = mapper.readTree(ctx.body());
-                String targetSessionId = body.path("targetSessionId").asText("").trim();
-                String supervisorSessionId = body.path("supervisorSessionId").asText("").trim();
+                String targetSessionId = body.path("targetSessionId").asText().trim();
+                String supervisorSessionId = body.path("supervisorSessionId").asText().trim();
 
                 if (targetSessionId.isBlank()) {
                     ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "targetSessionId is required"));
@@ -289,25 +288,27 @@ public class LivenessServerApp {
                 }
 
                 if (targetSessionId.equals(supervisorSessionId)) {
-                    ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "targetSessionId and supervisorSessionId must be distinct"));
+                    ctx.status(HttpStatus.BAD_REQUEST)
+                            .json(Map.of("error", "targetSessionId and supervisorSessionId must be distinct"));
                     return;
                 }
 
                 if (usedSupervisorSessions.contains(supervisorSessionId)) {
-                    ctx.status(HttpStatus.FORBIDDEN).json(Map.of("error", "Supervisor session already used (single-use policy)"));
+                    ctx.status(HttpStatus.FORBIDDEN)
+                            .json(Map.of("error", "Supervisor session already used (single-use policy)"));
                     return;
                 }
 
                 List<LivenessAuditEvent> supervisorEvents = memoryAuditSink.getEventsForSession(supervisorSessionId);
                 LivenessAuditEvent acceptedEvent = supervisorEvents.stream()
-                        .filter(ev -> ev.decision() == DecisionType.ACCEPTED && ev.workflow() == WorkflowType.SUPERVISOR_AUTH)
+                        .filter(ev -> ev.decision() == DecisionType.ACCEPTED
+                                && ev.workflow() == WorkflowType.SUPERVISOR_AUTH)
                         .findFirst()
                         .orElse(null);
 
                 if (acceptedEvent == null) {
                     ctx.status(HttpStatus.FORBIDDEN).json(Map.of(
-                            "error", "Supervisor override requires a valid prior ACCEPTED SUPERVISOR_AUTH session."
-                    ));
+                            "error", "Supervisor override requires a valid prior ACCEPTED SUPERVISOR_AUTH session."));
                     return;
                 }
 
@@ -315,24 +316,65 @@ public class LivenessServerApp {
                 long now = System.currentTimeMillis();
                 if (now - acceptedEvent.timestampMillis() > 300_000L) {
                     ctx.status(HttpStatus.FORBIDDEN).json(Map.of(
-                            "error", "Supervisor session expired (> 5 minutes old)."
-                    ));
+                            "error", "Supervisor session expired (> 5 minutes old)."));
                     return;
                 }
 
                 // Enforce single-use
                 usedSupervisorSessions.add(supervisorSessionId);
                 engine.recordSupervisorOverride(targetSessionId, supervisorSessionId);
-                log.info("Supervisor override authorized: supervisor={}, target={}", supervisorSessionId, targetSessionId);
+                log.info("Supervisor override authorized: supervisor={}, target={}", supervisorSessionId,
+                        targetSessionId);
 
                 ctx.json(Map.of(
                         "success", true,
                         "targetSessionId", targetSessionId,
                         "supervisorSessionId", supervisorSessionId,
-                        "message", "Supervisor override successfully recorded in audit log."
-                ));
+                        "message", "Supervisor override successfully recorded in audit log."));
             } catch (Exception e) {
                 ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "Invalid request body: " + e.getMessage()));
+            }
+        });
+
+        // Convenience aliases & redirects
+        app.get("/health", ctx -> ctx.redirect("/api/health"));
+        app.get("/collect", ctx -> ctx.redirect("/collect.html"));
+
+        // 6. Custom 404 Not Found Handler
+        app.error(HttpStatus.NOT_FOUND, ctx -> {
+            String path = ctx.path();
+            if (path.startsWith("/api/")) {
+                ctx.contentType("application/json");
+                ctx.json(Map.of("error", "Not Found", "status", 404, "path", path));
+                return;
+            }
+
+            String accept = ctx.header("Accept");
+            boolean acceptsHtml = accept != null && accept.contains("text/html");
+            boolean isAssetRequest = path.contains(".") && !path.endsWith(".html");
+
+            if (acceptsHtml && !isAssetRequest) {
+                ctx.contentType("text/html; charset=UTF-8");
+                try (var stream = LivenessServerApp.class.getResourceAsStream("/web/404.html")) {
+                    if (stream != null) {
+                        ctx.result(stream.readAllBytes());
+                    } else {
+                        ctx.result(
+                                "<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>");
+                    }
+                } catch (Exception ignored) {
+                    ctx.result(
+                            "<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>");
+                }
+            } else {
+                ctx.status(HttpStatus.NOT_FOUND);
+                if (accept != null && accept.contains("application/json")) {
+                    ctx.contentType("application/json");
+                    ctx.json(Map.of("error", "Not Found", "status", 404, "path", path));
+                } else {
+                    ctx.contentType("text/plain; charset=UTF-8");
+                    ctx.result("404 Not Found: " + path);
+                }
             }
         });
 
@@ -351,8 +393,7 @@ public class LivenessServerApp {
         }
         return MessageDigest.isEqual(
                 token.getBytes(StandardCharsets.UTF_8),
-                expected.getBytes(StandardCharsets.UTF_8)
-        );
+                expected.getBytes(StandardCharsets.UTF_8));
     }
 
     private boolean isOriginAllowed(String origin) {
@@ -360,7 +401,8 @@ public class LivenessServerApp {
         List<String> allowed = config.allowedOrigins();
         if (allowed == null || allowed.isEmpty() || allowed.contains("*")) return true;
         for (String a : allowed) {
-            if (origin.equalsIgnoreCase(a) || a.equals("*")) return true;
+            if (origin.equalsIgnoreCase(a) || a.equals("*")) return true ;
+
         }
         return false;
     }

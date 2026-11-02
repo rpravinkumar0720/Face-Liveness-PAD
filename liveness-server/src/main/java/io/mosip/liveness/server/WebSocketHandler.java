@@ -7,7 +7,6 @@ import io.javalin.websocket.WsConnectContext;
 import io.javalin.websocket.WsErrorContext;
 import io.javalin.websocket.WsMessageContext;
 import io.mosip.liveness.api.challenge.Challenge;
-import io.mosip.liveness.api.challenge.ChallengeResult;
 import io.mosip.liveness.api.decision.DecisionType;
 import io.mosip.liveness.api.decision.LivenessDecision;
 import io.mosip.liveness.api.engine.LivenessListener;
@@ -189,7 +188,7 @@ public class WebSocketHandler {
 
         try {
             JsonNode root = mapper.readTree(message);
-            String type = root.path("type").asText("");
+            String type = root.path("type").asText();
 
             if ("cancel".equalsIgnoreCase(type)) {
                 log.info("Client requested session cancel: socketId={}", ctx.sessionId());
@@ -316,7 +315,8 @@ public class WebSocketHandler {
         // P1-4: Challenge token echo verification
         if (state.session != null && state.session.getCurrentChallenge() != null) {
             Challenge activeCh = state.session.getCurrentChallenge();
-            String echoToken = root.path("challengeToken").asText(root.path("challengeId").asText(""));
+            String tokenVal = root.path("challengeToken").asText();
+            String echoToken = !tokenVal.isEmpty() ? tokenVal : root.path("challengeId").asText();
             if (!echoToken.isEmpty() && !activeCh.nonce().equals(echoToken) && !activeCh.challengeId().equals(echoToken)) {
                 log.warn("Frame rejected during active challenge: token '{}' does not match active challenge '{}'",
                         echoToken, activeCh.challengeId());
