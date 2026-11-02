@@ -7,8 +7,8 @@ import java.util.Locale;
 
 /**
  * Validates client-provided landmarks against server-side detections.
- * Evaluates bounding-box IoU, eye-centre distance, and pose discrepancies.
- * Flags mismatches as attack presentations.
+ * Evaluates bounding-box IoU, center alignment, eye-centre distance, and pose discrepancies.
+ * Flags genuine landmark forgery attacks while accommodating natural segmentation variance.
  */
 public final class LandmarkCrossValidator {
 
@@ -48,17 +48,22 @@ public final class LandmarkCrossValidator {
             return LandmarkValidationResult.failure("Server detected multiple faces (" + serverObs.faceCount() + ")", 0.0, 1.0);
         }
 
-        // 1. Bounding box IoU check
+        // 1. Bounding box IoU and spatial alignment check
         BoundingBox cb = clientObs.box();
         BoundingBox sb = serverObs.box();
         double iou = 1.0;
         if (cb != null && sb != null) {
             iou = computeIoU(cb, sb);
             if (iou < 0.20) {
-                return LandmarkValidationResult.failure(
-                        String.format(Locale.ROOT, "Bounding box IoU below threshold: %.3f (min 0.200)", iou),
-                        iou, 1.0
-                );
+                double centerDist = Math.hypot(cb.centerX() - sb.centerX(), cb.centerY() - sb.centerY());
+                double overlap = computeOverlapCoeff(cb, sb);
+                // If centers are significantly misaligned or spatial overlap is negligible, flag attack
+                if (centerDist > 0.25 || overlap < 0.25) {
+                    return LandmarkValidationResult.failure(
+                            String.format(Locale.ROOT, "Bounding box IoU below threshold: %.3f (min 0.200)", iou),
+                            iou, 1.0
+                    );
+                }
             }
         }
 
@@ -111,5 +116,26 @@ public final class LandmarkCrossValidator {
         float unionArea = areaA + areaB - intersectionArea;
 
         return unionArea > 0 ? (double) intersectionArea / unionArea : 0.0;
+    }
+
+    /**
+     * Computes overlap coefficient (intersection over minimum area) of two bounding boxes.
+     */
+    public static double computeOverlapCoeff(BoundingBox a, BoundingBox b) {
+        if (a == null || b == null) return 0.0;
+
+        float xLeft = Math.max(a.left(), b.left());
+        float yTop = Math.max(a.top(), b.top());
+        float xRight = Math.min(a.right(), b.right());
+        float yBottom = Math.min(a.bottom(), b.bottom());
+
+        if (xRight <= xLeft || yBottom <= yTop) {
+            return 0.0;
+        }
+
+        float intersectionArea = (xRight - xLeft) * (yBottom - yTop);
+        float minArea = Math.min(a.area(), b.area());
+
+        return minArea > 0 ? (double) intersectionArea / minArea : 0.0;
     }
 }

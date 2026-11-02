@@ -253,7 +253,7 @@ public class DefaultLivenessEngine implements LivenessEngine {
 
             // 2. Face Analysis & Landmark observation
             Optional<FaceObservation> clientObsOpt = faceAnalyzer.analyze(session.getSessionId(), frame);
-            FaceObservation serverObs = ServerFaceDetector.detect(frame);
+            FaceObservation serverObs = ServerFaceDetector.detect(frame, clientObsOpt.orElse(null));
 
             FaceObservation observation;
             if (clientObsOpt.isPresent() && clientObsOpt.get().faceCount() > 0) {
